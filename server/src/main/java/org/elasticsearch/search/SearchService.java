@@ -1938,14 +1938,13 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         final List<CanMatchNodeResponse.ResponseOrFailure> responses = new ArrayList<>(shardLevelRequests.size());
         for (var shardLevelRequest : shardLevelRequests) {
             long shardCanMatchStartTimeInNanos = System.nanoTime();
-            ShardSearchRequest shardSearchRequest = request.createShardSearchRequest(shardLevelRequest);
+            final ShardSearchRequest shardSearchRequest = request.createShardSearchRequest(shardLevelRequest);
             final IndexService indexService = indicesService.indexServiceSafe(shardSearchRequest.shardId().getIndex());
             final IndexShard indexShard = indexService.getShard(shardSearchRequest.shardId().id());
-            try {
-                // TODO remove the exception handling as it's now in canMatch itself
+            try (SearchContext searchContext = createSearchContext(shardSearchRequest, defaultSearchTimeout)) {
                 responses.add(new CanMatchNodeResponse.ResponseOrFailure(canMatch(shardSearchRequest)));
-                indexShard.getSearchOperationListener().onCanMatchPhase(System.nanoTime() - shardCanMatchStartTimeInNanos);
-            } catch (Exception e) {
+                indexShard.getSearchOperationListener().onCanMatchPhase(searchContext, System.nanoTime() - shardCanMatchStartTimeInNanos);
+            } catch (IOException e) {
                 responses.add(new CanMatchNodeResponse.ResponseOrFailure(e));
             }
         }

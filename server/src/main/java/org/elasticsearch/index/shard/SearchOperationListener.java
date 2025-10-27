@@ -91,9 +91,10 @@ public interface SearchOperationListener {
      * Executed after the can-match phase successfully finished.
      * Note: this is not invoked if the can match phase execution failed.
      *
+     * @param searchContext the current search context
      * @param tookInNanos the number of nanoseconds the can-match execution took
      */
-    default void onCanMatchPhase(long tookInNanos) {}
+    default void onCanMatchPhase(SearchContext searchContext, long tookInNanos) {}
 
     /**
      * Executed when a new reader context was created
@@ -246,10 +247,10 @@ public interface SearchOperationListener {
         }
 
         @Override
-        public void onCanMatchPhase(long tookInNanos) {
+        public void onCanMatchPhase(SearchContext searchContext, long tookInNanos) {
             for (SearchOperationListener listener : listeners) {
                 try {
-                    listener.onCanMatchPhase(tookInNanos);
+                    listener.onCanMatchPhase(searchContext, tookInNanos);
                 } catch (Exception e) {
                     logger.warn(() -> "onCanMatchPhase listener [" + listener + "] failed", e);
                 }
